@@ -19,7 +19,7 @@ class App extends Component {
     this.removeTodo = this.removeTodo.bind(this);
   }
   componentDidMount() {
-    fetch("http://localhost:5000/person")
+    fetch("http://evanstjabadi.live/todolist-back/person")
       .then(response => response.json())
       .then(data => this.setState({ todos: data }));
   }
@@ -45,7 +45,7 @@ class App extends Component {
 
       // update the backend
     );
-    fetch("http://localhost:5000/person", {
+    fetch("http://evanstjabadi.live/todolist-back/person", {
       method: "POST",
       body: JSON.stringify({ text: todoText }),
       headers: { "Content-Type": "application/json" }
@@ -53,7 +53,7 @@ class App extends Component {
   };
 
   removeTodo(id) {
-    fetch("http://localhost:5000/person" + "/" + id, {
+    fetch("http://evanstjabadi.live/todolist-back/person" + "/" + id, {
       method: "DELETE"
     });
 
