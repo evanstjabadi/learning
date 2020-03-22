@@ -1,7 +1,7 @@
 {
   "name": "learn",
   "version": "0.1.0",
-  "homepage": "http://evanstjabadi.live/todolist",
+  "homepage": "https://evanstjabadi.live/todolist",
   "private": true,
   "dependencies": {
     "react": "^16.12.0",
