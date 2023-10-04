@@ -8,7 +8,7 @@ on:
         required: true
         type: string
     branches-ignore:
-      - main
+      - master
 
 jobs:
   validate-version:
