@@ -1,0 +1,78 @@
+name: Development Container & Helm Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      dev_version:
+        description: "Development version: {major}.{minor}.{patch}-dev.{pr-number}.{n}"
+        required: true
+        type: string
+    branches-ignore:
+      - main
+
+jobs:
+  validate-version:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate development version
+        run: |
+          pattern="^([0-9]*)\.([0-9]*)\.([0-9]*)\-([a-z]*)\.([0-9]*)\.([0-9]*)$"
+          if ! [[ ${{ inputs.dev_version }} =~ $pattern ]]; then
+            echo "${{ inputs.dev_version }} is not a development version ({major}.{minor}.{patch}-dev.{pr-number}.{n})"
+            exit 1
+          fi
+
+  docker:
+    runs-on: ubuntu-latest
+    needs: [validate-version]
+    strategy:
+      matrix:
+        include:
+          - dockerfile: "server/Dockerfile"
+            image-name-append: ""
+            name: "Server"
+          - dockerfile: "./cli.dockerfile"
+            image-name-append: "-cli"
+            name: "Cli"
+          - dockerfile: "streams/Dockerfile"
+            image-name-append: "-streams"
+            name: "Streams"
+          - dockerfile: "tasks/Dockerfile"
+            image-name-append: "-celery"
+            name: "Celery"
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v2
+
+      - name: Generate Image Name
+        run: echo "result=uxi/${GITHUB_REPOSITORY#*/}${{ matrix.image-name-append }}" >> $GITHUB_OUTPUT
+        id: image_name
+
+      - name: Docker Release (${{ matrix.name }})
+        uses: aruba-uxi/container-release-action@main
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-region: us-west-2
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          dockerfile: ${{ matrix.dockerfile }}
+          fury-token: ${{ secrets.FURY_AUTH_PULL }}
+          image-name: ${{ steps.image_name.outputs.result }}
+          image-tag: ${{ inputs.dev_version }}
+
+  helm:
+    runs-on: ubuntu-latest
+    needs: [validate-version]
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v2
+
+      - name: Helm Release
+        uses: aruba-uxi/helm-release-action@main
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-region: us-west-2
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          chart-directory: charts/greenlake-service/
+          chart-version: ${{ inputs.dev_version }}
+          docker-image-version: ${{ inputs.dev_version }}
+          s3-bucket: s3://hpe-uxi-helm-repo
