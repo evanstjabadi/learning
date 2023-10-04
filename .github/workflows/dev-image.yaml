@@ -7,8 +7,8 @@ on:
         description: "Development version: {major}.{minor}.{patch}-dev.{pr-number}.{n}"
         required: true
         type: string
-    branches-ignore:
-      - master
+    branches:
+      - "!master"
 
 jobs:
   validate-version:
